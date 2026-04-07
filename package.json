@@ -1,0 +1,17 @@
+{
+  "name": "pareceres-system",
+  "version": "1.0.0",
+  "description": "Sistema de Pareceres Juridicos — busca, cadastro e gestao de pareceres",
+  "private": true,
+  "scripts": {
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "seed": "cd backend && npm run seed",
+    "start": "cd backend && npm start"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
