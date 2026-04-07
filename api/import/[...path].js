@@ -6,6 +6,11 @@ module.exports.config = {
   api: { bodyParser: false }
 };
 
+function getPath(req) {
+  const url = req.url.split('?')[0];
+  return url.replace(/^\/api\/import\/?/, '').split('/').filter(Boolean).join('/');
+}
+
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -50,9 +55,7 @@ module.exports = async function handler(req, res) {
   const user = requireAuth(req, res);
   if (!user) return;
 
-  const rawPath = req.query.path;
-  const segmentsArr = Array.isArray(rawPath) ? rawPath : (rawPath ? [rawPath] : []);
-  const path = segmentsArr.join('/');
+  const path = getPath(req);
 
   if (path === 'pdf') {
     try {

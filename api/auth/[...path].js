@@ -2,10 +2,13 @@ const bcrypt = require('bcryptjs');
 const { getDb } = require('../../lib/database');
 const { requireAuth, signToken } = require('../../lib/auth');
 
+function getPath(req) {
+  const url = req.url.split('?')[0];
+  return url.replace(/^\/api\/auth\/?/, '').split('/').filter(Boolean).join('/');
+}
+
 module.exports = async function handler(req, res) {
-  const rawPath = req.query.path;
-  const segments = Array.isArray(rawPath) ? rawPath : (rawPath ? [rawPath] : []);
-  const path = segments.join('/');
+  const path = getPath(req);
 
   if (path === 'login' && req.method === 'POST') {
     const { email, password } = req.body;

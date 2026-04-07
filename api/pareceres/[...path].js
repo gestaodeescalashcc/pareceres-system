@@ -3,14 +3,13 @@ const { createParecer, updateParecer, deleteParecer, getParecerById, addRelacion
 const { requireAuth } = require('../../lib/auth');
 const { validateParecer } = require('../../lib/validate');
 
-module.exports = async function handler(req, res) {
-  // Debug: return query info for __debug path
-  if (req.query.path && (req.query.path === '__debug' || (Array.isArray(req.query.path) && req.query.path[0] === '__debug'))) {
-    return res.json({ query: req.query, url: req.url, method: req.method });
-  }
+function getSegments(req) {
+  const url = req.url.split('?')[0];
+  return url.replace(/^\/api\/pareceres\/?/, '').split('/').filter(Boolean);
+}
 
-  const rawPath = req.query.path;
-  const segments = Array.isArray(rawPath) ? rawPath : (rawPath ? [rawPath] : []);
+module.exports = async function handler(req, res) {
+  const segments = getSegments(req);
   const path = segments.join('/');
 
   // GET /api/pareceres/search
@@ -99,69 +98,70 @@ module.exports = async function handler(req, res) {
   // Routes with :id parameter
   if (segments.length >= 1) {
     const id = parseInt(segments[0]);
-    if (isNaN(id)) return res.status(400).json({ error: 'ID invalido' });
-    const sub = segments[1] || '';
+    if (!isNaN(id)) {
+      const sub = segments[1] || '';
 
-    // GET /api/pareceres/:id/similares
-    if (sub === 'similares' && req.method === 'GET') {
-      try {
-        const limit = Math.min(parseInt(req.query.limit) || 5, 20);
-        const results = await findSimilares(id, limit);
-        return res.json(results);
-      } catch (err) {
-        return res.status(500).json({ error: err.message });
-      }
-    }
-
-    // GET/POST /api/pareceres/:id/relacionados
-    if (sub === 'relacionados') {
-      if (req.method === 'GET') {
-        const parecer = await getParecerById(id);
-        if (!parecer) return res.status(404).json({ error: 'Parecer nao encontrado' });
-        return res.json(parecer.relacionados || []);
-      }
-      if (req.method === 'POST') {
-        const user = requireAuth(req, res);
-        if (!user) return;
+      // GET /api/pareceres/:id/similares
+      if (sub === 'similares' && req.method === 'GET') {
         try {
-          const { relacionado_id, tipo_relacao } = req.body;
-          await addRelacionado(id, relacionado_id, tipo_relacao || 'cita');
-          return res.json({ success: true });
+          const limit = Math.min(parseInt(req.query.limit) || 5, 20);
+          const results = await findSimilares(id, limit);
+          return res.json(results);
         } catch (err) {
           return res.status(500).json({ error: err.message });
         }
       }
-    }
 
-    // GET/PUT/DELETE /api/pareceres/:id
-    if (!sub) {
-      if (req.method === 'GET') {
-        const parecer = await getParecerById(id);
-        if (!parecer) return res.status(404).json({ error: 'Parecer nao encontrado' });
-        return res.json(parecer);
+      // GET/POST /api/pareceres/:id/relacionados
+      if (sub === 'relacionados') {
+        if (req.method === 'GET') {
+          const parecer = await getParecerById(id);
+          if (!parecer) return res.status(404).json({ error: 'Parecer nao encontrado' });
+          return res.json(parecer.relacionados || []);
+        }
+        if (req.method === 'POST') {
+          const user = requireAuth(req, res);
+          if (!user) return;
+          try {
+            const { relacionado_id, tipo_relacao } = req.body;
+            await addRelacionado(id, relacionado_id, tipo_relacao || 'cita');
+            return res.json({ success: true });
+          } catch (err) {
+            return res.status(500).json({ error: err.message });
+          }
+        }
       }
-      if (req.method === 'PUT') {
-        const user = requireAuth(req, res);
-        if (!user) return;
-        try {
-          const parecer = await updateParecer(id, req.body);
+
+      // GET/PUT/DELETE /api/pareceres/:id
+      if (!sub) {
+        if (req.method === 'GET') {
+          const parecer = await getParecerById(id);
           if (!parecer) return res.status(404).json({ error: 'Parecer nao encontrado' });
           return res.json(parecer);
-        } catch (err) {
-          return res.status(500).json({ error: err.message });
         }
-      }
-      if (req.method === 'DELETE') {
-        const user = requireAuth(req, res);
-        if (!user) return;
-        const deleted = await deleteParecer(id);
-        if (!deleted) return res.status(404).json({ error: 'Parecer nao encontrado' });
-        return res.json({ success: true });
+        if (req.method === 'PUT') {
+          const user = requireAuth(req, res);
+          if (!user) return;
+          try {
+            const parecer = await updateParecer(id, req.body);
+            if (!parecer) return res.status(404).json({ error: 'Parecer nao encontrado' });
+            return res.json(parecer);
+          } catch (err) {
+            return res.status(500).json({ error: err.message });
+          }
+        }
+        if (req.method === 'DELETE') {
+          const user = requireAuth(req, res);
+          if (!user) return;
+          const deleted = await deleteParecer(id);
+          if (!deleted) return res.status(404).json({ error: 'Parecer nao encontrado' });
+          return res.json({ success: true });
+        }
       }
     }
   }
 
-  // POST /api/pareceres (create — path is empty array when no segments)
+  // POST /api/pareceres (create)
   if (segments.length === 0 && req.method === 'POST') {
     const user = requireAuth(req, res);
     if (!user) return;
