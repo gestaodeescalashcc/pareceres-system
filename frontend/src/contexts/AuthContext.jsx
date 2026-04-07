@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
+const BASE = (import.meta.env.VITE_API_URL || '') + '/api'
+
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -9,7 +11,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
     if (!token) { setLoading(false); return }
-    fetch('/api/auth/me', {
+    fetch(`${BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.ok ? r.json() : Promise.reject())
@@ -19,7 +21,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (email, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
