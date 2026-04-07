@@ -3,7 +3,9 @@ const { getDb } = require('../../lib/database');
 const { requireAuth, signToken } = require('../../lib/auth');
 
 module.exports = async function handler(req, res) {
-  const path = (req.query.path || []).join('/');
+  const rawPath = req.query.path;
+  const segments = Array.isArray(rawPath) ? rawPath : (rawPath ? [rawPath] : []);
+  const path = segments.join('/');
 
   if (path === 'login' && req.method === 'POST') {
     const { email, password } = req.body;

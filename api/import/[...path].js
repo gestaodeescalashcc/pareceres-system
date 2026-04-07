@@ -50,7 +50,9 @@ module.exports = async function handler(req, res) {
   const user = requireAuth(req, res);
   if (!user) return;
 
-  const path = (req.query.path || []).join('/');
+  const rawPath = req.query.path;
+  const segmentsArr = Array.isArray(rawPath) ? rawPath : (rawPath ? [rawPath] : []);
+  const path = segmentsArr.join('/');
 
   if (path === 'pdf') {
     try {

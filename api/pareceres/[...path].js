@@ -4,7 +4,13 @@ const { requireAuth } = require('../../lib/auth');
 const { validateParecer } = require('../../lib/validate');
 
 module.exports = async function handler(req, res) {
-  const segments = req.query.path || [];
+  // Debug: return query info for __debug path
+  if (req.query.path && (req.query.path === '__debug' || (Array.isArray(req.query.path) && req.query.path[0] === '__debug'))) {
+    return res.json({ query: req.query, url: req.url, method: req.method });
+  }
+
+  const rawPath = req.query.path;
+  const segments = Array.isArray(rawPath) ? rawPath : (rawPath ? [rawPath] : []);
   const path = segments.join('/');
 
   // GET /api/pareceres/search
