@@ -19,11 +19,17 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 
 app.use(cors({
-  origin: [
-    'http://localhost:5174',
-    'http://localhost:3001',
-    'https://pareceres-system.vercel.app'
-  ],
+  origin: function (origin, callback) {
+    const allowed = [
+      'http://localhost:5174',
+      'http://localhost:3001'
+    ];
+    if (!origin || allowed.includes(origin) || /\.vercel\.app$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
